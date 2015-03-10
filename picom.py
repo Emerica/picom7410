@@ -11,10 +11,10 @@ def ic7410_get_frequency():
 def read_7410():
     s = ""
     while s != "fe":
-        #print "waiting for sync...." + s
+        if debug : print "waiting for sync...." + s
         s = ser.read().encode('hex')
     if ser.read().encode('hex') == "fe":
-        #print "synced, packet info :"
+        if debug : print "synced, packet info :"
         i = 0
         command = ""
         while s != "fd":
