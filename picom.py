@@ -1,8 +1,15 @@
 #!/usr/bin/python
+#ICOM 7410 Control 
+#VE6PXN - Shane Andrusiak
+#Documentation from http://www.plicht.de/ekki/civ
 import serial
-debug = 0
+debug = 1
 
 ser = serial.Serial('/dev/ttyUSB0', 19200) 
+def itobcd(i):
+    i = i.zfill(9)
+    out =  r'\x'+i[8]+'2'+r'\x'+i[6]+i[7]+r'\x'+i[4]+i[5]+r'\x'+i[2]+i[3]+r'\x'+i[0]+i[1]
+    return out
 
 def ic7410_get_frequency():
     s = ser.write("\xfe\xfe\x80\x00\x03\xfd")
@@ -13,8 +20,43 @@ def ic7410_get_band_edge():
 def ic7410_get_mode_filter():
     s = ser.write("\xfe\xfe\x80\x00\x04\xfd")
 
-def ic7410_set_frequency():
-    s = ser.write("\xfe\xfe\x80\x00\x05\xfd")
+def ic7410_set_frequency(i):
+    hex = itobcd(i)
+    s = ser.write("\xfe\xfe\x80\x00\x00"+hex.decode('string_escape')+"\xfd")
+
+def ic7410_set_mode_filter(mode,filter):
+    mode =  r'\x0'+ str(mode)
+    filter =  r'\x0'+ str(filter)
+    s = ser.write("\xfe\xfe\x80\x00\x01" + mode.decode('string_escape') + filter.decode('string_escape') + "\xfd")
+
+def ic7410_set_mode_filter_2(mode,filter):
+    mode =  r'\x0'+ str(mode)
+    filter =  r'\x0'+ str(filter)
+    s = ser.write("\xfe\xfe\x80\x00\x06" + mode.decode('string_escape') + filter.decode('string_escape') + "\xfd")
+
+def ic7410_set_vfo_mode():
+    s = ser.write("\xfe\xfe\x80\x00\x07\xfd")
+
+def ic7410_set_vfo_mode(vfo):
+    vfo =  r'\x0'+ str(vfo)
+    s = ser.write("\xfe\xfe\x80\x00\x07" + vfo.decode('string_escape') + "\xfd")
+
+def ic7410_set_vfo(a,b):
+    vfo =  r'\x0'+ str(a)+ str(b)
+    s = ser.write("\xfe\xfe\x80\x00\x07" + vfo.decode('string_escape') + "\xfd")
+
+def ic7410_set_mem_mode():
+    s = ser.write("\xfe\xfe\x80\x00\x08\xfd")
+
+def ic7410_set_memory_channel(channel):
+    channel =  r'\x0'+ str(channel).zfill(1)
+    s = ser.write("\xfe\xfe\x80\x00\x08\x00" + channel.decode('string_escape') + "\xfd")
+
+def ic7410_write_memory():
+    s = ser.write("\xfe\xfe\x80\x00\x09\xfd")
+    
+def ic7410_clear_memory():
+    s = ser.write("\xfe\xfe\x80\x00\x0B\xfd")
 
 def ic7410_show_mode(byte):
     if byte == "\x00":
@@ -78,6 +120,16 @@ read = 1
 #ic7410_get_band_edge()
 #ic7410_get_frequency()
 #ic7410_get_mode_filter()
+#ic7410_set_frequency("616500")
+#ic7410_set_mode_filter(2,1)
+#ic7410_set_mode_filter_2(2,2)
+#ic7410_set_vfo_mode()
+#ic7410_set_mem_mode()
+#ic7410_set_memory_channel(1)
+#ic7410_set_frequency("616500")
+#ic7410_set_mode_filter(2,1)
+#ic7410_write_memory()
+ 
 while read!=0:
     cmd = ic7410_read()
     if len(cmd) > 2:
@@ -93,6 +145,12 @@ while read!=0:
         elif cmd[0] == "\x04":
             ic7410_show_mode(cmd[1])
             ic7410_show_filter(cmd[2])
+        elif cmd[0] == "\x06":
+                if debug : print "set mode :"
+        elif cmd[0] == "\x07":
+                if debug : print "set vfo :"
+        elif cmd[0] == "\x08":
+                if debug : print "set mem :"
         else:
             print "Unknown Command (" +cmd[0].encode('hex')+ "), mail blendz@shaw.ca"
             print cmd
